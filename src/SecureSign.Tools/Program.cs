@@ -23,7 +23,7 @@ namespace SecureSign.Tools
 			var services = new ServiceCollection();
 			services.AddSecureSignCore(config);
 			services.AddScoped<IKeyHandler, AuthenticodeKeyHandler>();
-			services.AddScoped<IKeyHandler, GpgKeyHandler>();
+			// services.AddScoped<IKeyHandler, GpgKeyHandler>();
 			services.AddScoped<IKeyHandlerFactory, KeyHandlerFactory>();
 
 			var provider = services.BuildServiceProvider();
