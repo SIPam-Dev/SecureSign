@@ -100,19 +100,38 @@ namespace SecureSign.Core.Signers
 		/// <returns>A signed copy of the file</returns>
 		private async Task<Stream> SignUsingSignToolAsync(string inputFile, string certFile, string certPassword, string description, string url)
 		{
+			// dual sign using sha1 ...
 			await RunProcessAsync(
 				_pathConfig.SignTool,
 				new[]
 				{
 					"sign",
-					"/q",
+					"/v",
 					$"/f \"{CommandLineEncoder.Utils.EncodeArgText(certFile)}\"",
 					$"/p \"{CommandLineEncoder.Utils.EncodeArgText(certPassword)}\"",
 					$"/d \"{CommandLineEncoder.Utils.EncodeArgText(description)}\"",
 					$"/du \"{CommandLineEncoder.Utils.EncodeArgText(url)}\"",
-					"/tr http://timestamp.digicert.com",
+					"/t http://timestamp.digicert.com",
+					"/fd sha1",
+					$"\"{CommandLineEncoder.Utils.EncodeArgText(inputFile)}\"",
+				}
+			);
+			// and sha256 ...
+			await RunProcessAsync(
+				_pathConfig.SignTool,
+				new[]
+				{
+					"sign",
+					"/v",
+					$"/f \"{CommandLineEncoder.Utils.EncodeArgText(certFile)}\"",
+					$"/p \"{CommandLineEncoder.Utils.EncodeArgText(certPassword)}\"",
+					$"/d \"{CommandLineEncoder.Utils.EncodeArgText(description)}\"",
+					$"/du \"{CommandLineEncoder.Utils.EncodeArgText(url)}\"",
+					//"/tr http://timestamp.globalsign.com/scripts/timestamp.dll",
+					"/tr http://timestamp.digicert.com?td=sha256",
 					"/td sha256",
 					"/fd sha256",
+					"/as",
 					$"\"{CommandLineEncoder.Utils.EncodeArgText(inputFile)}\"",
 				}
 			);
@@ -247,7 +266,7 @@ namespace SecureSign.Core.Signers
 			{
 				var errorOutput = await process.StandardError.ReadToEndAsync();
 				var stdOutput = await process.StandardOutput.ReadToEndAsync();
-				throw new AuthenticodeFailedException("Failed to Authenticode sign: " + errorOutput + ", " + stdOutput);
+				throw new AuthenticodeFailedException("Failed to Authenticode sign: " + process.ExitCode.ToString() + "\n" + errorOutput + ", " + stdOutput);
 			}
 		}
 
