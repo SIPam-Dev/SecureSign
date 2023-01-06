@@ -7,24 +7,66 @@
 
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using SecureSign.Core;
 using SecureSign.Core.Extensions;
+
+using Microsoft.Extensions.Configuration;
+using Serilog.AspNetCore;
+using Serilog;
 
 namespace SecureSign.Web
 {
 	public class Program
 	{
-		public static void Main(string[] args)
+		public static int Main(string[] args)
 		{
-			CreateWebHostBuilder(args).Build().Run();
+			// The initial "bootstrap" logger is able to log errors during start-up. It's completely replaced by the
+			// logger configured in `UseSerilog()` below, once configuration and dependency-injection have both been
+			// set up successfully.
+			Log.Logger = new LoggerConfiguration()
+				.WriteTo.Console()
+				.CreateBootstrapLogger();
+
+			Log.Information("Starting up!");
+
+			try
+			{
+				CreateWebHostBuilder(args).Build().Run();
+
+				Log.Information("Stopped cleanly");
+				return 0;
+			}
+/*			catch (Exception ex)
+			{
+				Log.Fatal(ex, "An unhandled exception occured during bootstrapping");
+				return 1;
+			}
+			*/
+			finally
+			{
+				Log.CloseAndFlush();
+			}
 		}
 
 		public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
 			WebHost.CreateDefaultBuilder(args)
 				.ConfigureAppConfiguration(builder => builder.AddSecureSignConfig())
+                .ConfigureAppConfiguration((builderContext, config) =>
+                    {
+                        Log.Logger = new LoggerConfiguration()
+							.ReadFrom.Configuration(config.Build())
+							.CreateLogger();
+                    })
 				.ConfigureKestrel(options =>
 				{
 					options.Limits.MaxRequestBodySize = Constants.MAX_ARTIFACT_SIZE;
+					options.Limits.MinRequestBodyDataRate = new MinDataRate(
+						bytesPerSecond: 240, 
+						gracePeriod: System.TimeSpan.FromSeconds(30)
+						);
 				})
+				.UseSerilog()
 				.UseStartup<Startup>();
 	}
 }

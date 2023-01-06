@@ -12,9 +12,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using SecureSign.Core.Extensions;
 using SecureSign.Web.Controllers;
 using SecureSign.Web.Middleware;
+using Serilog;
 
 namespace SecureSign.Web
 {
@@ -40,7 +42,13 @@ namespace SecureSign.Web
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+			// Write streamlined request completion events, instead of the more verbose ones from the framework.
+			// To use the default framework request logging instead, remove this line and set the "Microsoft"
+			// level in appsettings.json to "Information".
+			app.UseSerilogRequestLogging();
+
 	        app.UseJsonExceptionHandler(isDev: env.IsDevelopment());
+
 	        app.UseRouting();
 	        app.UseEndpoints(endpoints =>
 	        {
