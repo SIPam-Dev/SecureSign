@@ -7,6 +7,8 @@
 
 using System;
 using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace SecureSign.Web.Models
 {
@@ -18,6 +20,7 @@ namespace SecureSign.Web.Models
 		/// <summary>
 		/// Gets or sets the access token for the request. Will decode to an instance of <see cref="AccessToken"/>.
 		/// </summary>
+		[Required]
 		public string AccessToken { get; set; }
 		
 		/// <summary>

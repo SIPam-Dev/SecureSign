@@ -7,6 +7,7 @@
 
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using SecureSign.Core;
 using SecureSign.Core.Signers;
 using SecureSign.Web.Models;
@@ -43,6 +44,10 @@ namespace SecureSign.Web.Controllers
 		[Route("sign/authenticode")]
 		public async Task<IActionResult> SignUsingAuthenticode(SignRequest request)
 		{
+			if (!ModelState.IsValid) {
+				return new BadRequestObjectResult(ModelState);
+			}	
+			
 			var (token, tokenConfig, tokenError) = _utils.TryGetAccessToken(request);
 			if (tokenError != null)
 			{
