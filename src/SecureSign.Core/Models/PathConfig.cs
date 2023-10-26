@@ -52,7 +52,7 @@ namespace SecureSign.Core.Models
 		/// <summary>
 		/// Gets or sets the path to signtool.exe
 		/// </summary>
-		public string AzureSignTool { get; set; } = @"$(USERPROFILE)\.dotnet\tools\AzureSignTool.exe";
+		public string AzureSignTool { get; set; } = @"%USERPROFILE%\.dotnet\tools\AzureSignTool.exe";
 
 	}
 }

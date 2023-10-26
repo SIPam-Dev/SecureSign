@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
@@ -57,10 +58,16 @@ namespace SecureSign.Core.Signers
 		/// <returns>A signed copy of the file</returns>
 		public async Task<Stream> SignAsync(Stream input, byte[] configData, string configKey, string description, string url, string fileExtention)
 		{
-			if (X509Certificate2.GetCertContentType(configData) != X509ContentType.Unknown)
+			try
 			{
-				var cert = new X509Certificate2(configData, configKey, X509KeyStorageFlags.Exportable);
-				return await SignAsync(input, cert, description, url, fileExtention);
+				// if (X509Certificate2.GetCertContentType(configData) == X509ContentType.Pfx)
+				{
+					var cert = new X509Certificate2(configData, configKey, X509KeyStorageFlags.Exportable);
+					return await SignAsync(input, cert, description, url, fileExtention);
+				}
+			}
+			catch (CryptographicException)
+			{
 			}
 
 			using (var stream = new MemoryStream(configData, false))
@@ -133,7 +140,7 @@ namespace SecureSign.Core.Signers
 		{
 			// dual sign using sha1 ...
 			await RunProcessAsync(
-				_pathConfig.SignTool,
+				Environment.ExpandEnvironmentVariables(_pathConfig.SignTool),
 				new[]
 				{
 					"sign",
@@ -149,7 +156,7 @@ namespace SecureSign.Core.Signers
 			);
 			// and sha256 ...
 			await RunProcessAsync(
-				_pathConfig.SignTool,
+				Environment.ExpandEnvironmentVariables(_pathConfig.SignTool),
 				new[]
 				{
 					"sign",
@@ -189,10 +196,10 @@ namespace SecureSign.Core.Signers
 			// dual signing is not possible due to api limitations
 			/*
 			await RunProcessAsync(
-				_pathConfig.AzureSignTool,
+				Environment.ExpandEnvironmentVariables(_pathConfig.AzureSignTool),
 				new[]
 				{
-					"AzureSignTool",
+					"sign",
 					"-v",
 					$"-kvu \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultUrl)}\"",
 					$"-kvt \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultTenant)}\"",
@@ -210,10 +217,10 @@ namespace SecureSign.Core.Signers
 			*/
 			// and sha256 ...
 			await RunProcessAsync(
-				_pathConfig.AzureSignTool,
+				Environment.ExpandEnvironmentVariables(_pathConfig.AzureSignTool),
 				new[]
 				{
-					"AzureSignTool",
+					"sign",
 					"-v",
 					$"-kvu \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultUrl)}\"",
 					$"-kvt \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultTenant)}\"",
