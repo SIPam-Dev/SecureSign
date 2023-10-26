@@ -26,6 +26,8 @@ namespace SecureSign.Core
 				case ".gpg":
 					return KeyType.Gpg;
 				default:
+					if (filename.EndsWith(".az.json", true, null))
+						return KeyType.AzureKeyVault;
 					throw new Exception("Unsupported key type");
 			}
 		}

@@ -6,10 +6,12 @@
  */
 
 using System;
+using System.IO;
 using System.Linq;
 using Libgpgme;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using SecureSign.Core;
 using SecureSign.Core.Models;
 using SecureSign.Web.Models;
@@ -66,7 +68,24 @@ namespace SecureSign.Web.Controllers
 						Subject = cert.SubjectName.Format(false),
 						Thumbprint = cert.Thumbprint,
 					});
+				case KeyType.AzureKeyVault:
+					var inputData = _secretStorage.LoadSecret(token.KeyName, token.Code);
+					using (var stream = new MemoryStream(inputData, false))
+					using (var reader = new StreamReader(stream, true))
+					{
+						var config = JsonConvert.DeserializeObject<AzureSignToolConfig>(reader.ReadToEnd());
 
+						return Ok(new CertificateStatusResponse
+						{
+							CreationDate = System.IO.File.GetCreationTime(token.KeyName),
+							//ExpiryDate = cert.NotAfter,
+							//Issuer = cert.IssuerName.Format(false),
+							Name = token.KeyName,
+							//SerialNumber = cert.SerialNumber,
+							Subject = config.KeyVaultCert,
+							//Thumbprint = cert.Thumbprint,
+						});
+					}
 				case KeyType.Gpg:
 					var key = _ctx.KeyStore.GetKey(token.KeyFingerprint, secretOnly: false);
 					var subkey = key.Subkeys.First(x => x.KeyId == token.KeyFingerprint);
