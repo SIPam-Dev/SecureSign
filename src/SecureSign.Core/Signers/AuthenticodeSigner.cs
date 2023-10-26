@@ -141,6 +141,68 @@ namespace SecureSign.Core.Signers
 		}
 
 		/// <summary>
+		/// Signs the specified file using azureSignTool.exe from Kevin Jones (https://github.com/vcsjones/AzureSignTool)
+		/// </summary>
+		/// <param name="inputFile">File to sign</param>
+		/// <param name="keyVaultUrl">URL of the Azure KeyVault</param>
+		/// <param name="keyVaultTenant">ID of the Azure Tenant</param>
+		/// <param name="keyVaultClient">ID of the Azure Client (Application ID)</param>
+		/// <param name="keyVaultClientSecret">Azure client secret</param>
+		/// <param name="certName">Name of the certificate in KeyVault</param>
+		/// <param name="description">Description to sign the object with</param>
+		/// <param name="url">URL to include in the signature</param>
+		/// <returns>A signed copy of the file</returns>
+		private async Task<Stream> SignUsingAzureSignToolAsync(string inputFile, string keyVaultUrl, string keyVaultTenant, string keyVaultClient, string keyVaultClientSecret, string certName, string description, string url)
+		{
+			// dual sign using sha1 ...
+			// dual signing is not possible due to api limitations
+			/*
+			await RunProcessAsync(
+				_pathConfig.AzureSignTool,
+				new[]
+				{
+					"AzureSignTool",
+					"-v",
+					$"-kvu \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultUrl)}\"",
+					$"-kvt \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultTenant)}\"",
+					$"-kvc \"{CommandLineEncoder.Utils.EncodeArgText(certName)}\"",
+					$"-kvi \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultClient)}\"",
+					$"-kvs \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultClientSecret)}\"",
+					$"-d \"{CommandLineEncoder.Utils.EncodeArgText(description)}\"",
+					$"-du \"{CommandLineEncoder.Utils.EncodeArgText(url)}\"",
+					"-td sha1", "-tr http://timestamp.digicert.com?td=sha1",
+					"-fd sha1",
+					// "-ph", // activate page hashing?
+					$"\"{CommandLineEncoder.Utils.EncodeArgText(inputFile)}\"",
+				}
+			);
+			*/
+			// and sha256 ...
+			await RunProcessAsync(
+				_pathConfig.AzureSignTool,
+				new[]
+				{
+					"AzureSignTool",
+					"-v",
+					$"-kvu \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultUrl)}\"",
+					$"-kvt \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultTenant)}\"",
+					$"-kvc \"{CommandLineEncoder.Utils.EncodeArgText(certName)}\"",
+					$"-kvi \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultClient)}\"",
+					$"-kvs \"{CommandLineEncoder.Utils.EncodeArgText(keyVaultClientSecret)}\"",
+					$"-d \"{CommandLineEncoder.Utils.EncodeArgText(description)}\"",
+					$"-du \"{CommandLineEncoder.Utils.EncodeArgText(url)}\"",
+					"-td sha256", "-tr http://timestamp.digicert.com?td=sha256",
+					"-fd sha256",
+					// "-ph", // activate page hashing?
+					$"\"{CommandLineEncoder.Utils.EncodeArgText(inputFile)}\"",
+				}
+			);
+
+			// AzureSignTool signs in-place, so just return the file we were given.
+			return File.OpenRead(inputFile);
+		}
+
+		/// <summary>
 		/// Signs the specified file using Powershell Set-Authenticode
 		/// </summary>
 		/// <param name="inputFile">File to sign</param>
