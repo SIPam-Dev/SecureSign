@@ -44,7 +44,7 @@ namespace SecureSign.Tools.KeyHandlers
 			using (var reader = new StreamReader(stream, true))
 			{
 				var config = JsonConvert.DeserializeObject<AzureSignToolConfig>(reader.ReadToEnd());
-				config.KeyVaultClientSecret = password.ToString();
+				config.KeyVaultClientSecret = password.ToAnsiString();
 				var code = _passwordGenerator.Generate();
 
 				_secretStorage.SaveSecret(fileName, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config)), code);
