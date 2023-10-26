@@ -7,7 +7,9 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Security.Cryptography.X509Certificates;
+using Newtonsoft.Json;
 using SecureSign.Core;
 using SecureSign.Core.Extensions;
 using SecureSign.Core.Models;
@@ -44,17 +46,40 @@ namespace SecureSign.Tools.KeyHandlers
 			_secretStorage.ThrowIfSecretExists(fileName);
 
 			var password = ConsoleUtils.PasswordPrompt("Password");
-			var cert = new X509Certificate2(File.ReadAllBytes(inputPath), password, X509KeyStorageFlags.Exportable);
+			var inputData = File.ReadAllBytes(inputPath);
 
-			var code = _passwordGenerator.Generate();
-			_secretStorage.SaveSecret(fileName, cert, code);
-			Console.WriteLine();
-			Console.WriteLine($"Saved {fileName} ({cert.FriendlyName})");
-			Console.WriteLine($"Subject: {cert.SubjectName.Format(false)}");
-			Console.WriteLine($"Issuer: {cert.IssuerName.Format(false)}");
-			Console.WriteLine($"Valid from {cert.NotBefore} until {cert.NotAfter}");
-			Console.WriteLine();
-			Console.WriteLine($"Secret Code: {code}");
+			if (X509Certificate2.GetCertContentType(inputData) != X509ContentType.Unknown)
+			{
+				var cert = new X509Certificate2(inputData, password, X509KeyStorageFlags.Exportable);
+				var code = _passwordGenerator.Generate();
+				_secretStorage.SaveSecret(fileName, cert, code);
+				Console.WriteLine();
+				Console.WriteLine($"Saved {fileName} ({cert.FriendlyName})");
+				Console.WriteLine($"Subject: {cert.SubjectName.Format(false)}");
+				Console.WriteLine($"Issuer: {cert.IssuerName.Format(false)}");
+				Console.WriteLine($"Valid from {cert.NotBefore} until {cert.NotAfter}");
+				Console.WriteLine();
+				Console.WriteLine($"Secret Code: {code}");
+			}
+			else
+			{
+				using (var stream = new MemoryStream(inputData, false))
+				using (var reader = new StreamReader(stream, true))
+				{
+					var config = JsonConvert.DeserializeObject<AzureSignToolConfig>(reader.ReadToEnd());
+					config.KeyVaultClientSecret = password.ToString();
+					var code = _passwordGenerator.Generate();
+					
+					_secretStorage.SaveSecret(fileName, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config)), code);
+					Console.WriteLine();
+					Console.WriteLine($"Saved {fileName}");
+					Console.WriteLine($"Certificate name: {config.KeyVaultCert}");
+					Console.WriteLine($"Tenant id: {config.KeyVaultTenant}");
+					Console.WriteLine($"Client id: {config.KeyVaultClient}");
+					Console.WriteLine();
+					Console.WriteLine($"Secret Code: {code}");
+				}
+			}
 		}
 
 		/// <summary>

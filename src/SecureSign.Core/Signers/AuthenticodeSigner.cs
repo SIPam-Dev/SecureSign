@@ -14,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using SecureSign.Core.Exceptions;
 using SecureSign.Core.Extensions;
 using SecureSign.Core.Models;
@@ -48,11 +49,41 @@ namespace SecureSign.Core.Signers
 		/// Signs the provided resource with an Authenticode signature.
 		/// </summary>
 		/// <param name="input">Object to sign</param>
+		/// <param name="configData">Configuration data for signing</param>
+		/// <param name="configKey">Configuration key, e.g. to decrypt/access configuration data</param>
 		/// <param name="cert">Certificate to use for signing</param>
 		/// <param name="description">Description to sign the object with</param>
 		/// <param name="url">URL to include in the signature</param>
 		/// <returns>A signed copy of the file</returns>
-		public async Task<Stream> SignAsync(Stream input, X509Certificate2 cert, string description, string url, string fileExtention)
+		public async Task<Stream> SignAsync(Stream input, byte[] configData, string configKey, string description, string url, string fileExtention)
+		{
+			if (X509Certificate2.GetCertContentType(configData) != X509ContentType.Unknown)
+			{
+				var cert = new X509Certificate2(configData, configKey, X509KeyStorageFlags.Exportable);
+				return await SignAsync(input, cert, description, url, fileExtention);
+			}
+
+			using (var stream = new MemoryStream(configData, false))
+			using (var reader = new StreamReader(stream, true))
+			{
+				var config = JsonConvert.DeserializeObject<AzureSignToolConfig>(reader.ReadToEnd());
+				var inputFile = Path.GetTempFileName() + fileExtention;
+				_filesToDelete.Add(inputFile);
+
+				await input.CopyToFileAsync(inputFile);
+				return await SignUsingAzureSignToolAsync(inputFile, config.KeyVaultUrl, config.KeyVaultTenant, config.KeyVaultClient, config.KeyVaultClientSecret, config.KeyVaultCert, description, url);
+			}
+		}
+
+		/// <summary>
+		/// Signs the provided resource with an Authenticode signature.
+		/// </summary>
+		/// <param name="input">Object to sign</param>
+		/// <param name="cert">Certificate to use for signing</param>
+		/// <param name="description">Description to sign the object with</param>
+		/// <param name="url">URL to include in the signature</param>
+		/// <returns>A signed copy of the file</returns>
+		private async Task<Stream> SignAsync(Stream input, X509Certificate2 cert, string description, string url, string fileExtention)
 		{
 			// Temporarily save the cert to disk with a random password, as osslsigncode needs to read it from disk.
 			var password = _passwordGenerator.Generate();

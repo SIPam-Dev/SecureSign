@@ -54,14 +54,14 @@ namespace SecureSign.Web.Controllers
 				return tokenError;
 			}
 
-			var cert = _secretStorage.LoadAuthenticodeCertificate(token.KeyName, token.Code);
 			var (artifact, artifactError, fileExtention) = await _utils.GetFileFromPayloadAsync(token, tokenConfig, request);
 			if (artifactError != null)
 			{
 				return artifactError;
 			}
 
-			var signed = await _signer.SignAsync(artifact, cert, tokenConfig.SignDescription, tokenConfig.SignUrl, fileExtention);
+			var rawCert = _secretStorage.LoadSecret(token.KeyName, token.Code);
+			var signed = await _signer.SignAsync(artifact, rawCert, token.Code, tokenConfig.SignDescription, tokenConfig.SignUrl, fileExtention);
 			return File(signed, "application/octet-stream");
 		}
 	}

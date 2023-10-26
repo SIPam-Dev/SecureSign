@@ -20,11 +20,12 @@ namespace SecureSign.Core.Signers
 		/// Signs the provided resource with an Authenticode signature.
 		/// </summary>
 		/// <param name="input">Object to sign</param>
-		/// <param name="cert">Certificate to use for signing</param>
+		/// <param name="configData">Configuration data for signing</param>
+		/// <param name="configKey">Configuration key, e.g. to decrypt/access configuration data</param>
 		/// <param name="description">Description to sign the object with</param>
 		/// <param name="url">URL to include in the signature</param>
 		/// <param name="fileExtention">Extention type of the file to sign</param>
 		/// <returns>A signed copy of the file</returns>
-		Task<Stream> SignAsync(Stream input, X509Certificate2 cert, string description, string url, string fileExtention);
+		Task<Stream> SignAsync(Stream input, byte[] configData, string configKey, string description, string url, string fileExtention);
 	}
 }
