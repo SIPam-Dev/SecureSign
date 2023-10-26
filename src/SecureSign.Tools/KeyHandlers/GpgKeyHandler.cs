@@ -44,6 +44,11 @@ namespace SecureSign.Tools.KeyHandlers
 		/// <param name="inputPath"></param>
 		public void AddKey(string inputPath)
 		{
+			if (!File.Exists(inputPath))
+			{
+				throw new Exception("File does not exist: " + inputPath);
+			}
+
 			// Create a temporary directory to hold the GPG key while we verify that it's legit
 			var tempHomedir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 			Console.WriteLine($"Using {tempHomedir} as temp directory.");

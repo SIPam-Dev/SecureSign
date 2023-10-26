@@ -68,11 +68,6 @@ namespace SecureSign.Tools
 						return 1;
 					}
 
-					if (!File.Exists(inputPath))
-					{
-						throw new Exception("File does not exist: " + inputPath);
-					}
-
 					var handler = _keyHandlerFactory.GetHandler(inputPath);
 					handler.AddKey(inputPath);
 

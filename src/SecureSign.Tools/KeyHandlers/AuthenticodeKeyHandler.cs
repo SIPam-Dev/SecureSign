@@ -41,6 +41,11 @@ namespace SecureSign.Tools.KeyHandlers
 		/// <param name="inputPath"></param>
 		public void AddKey(string inputPath)
 		{
+			if (!File.Exists(inputPath))
+			{
+				throw new Exception("File does not exist: " + inputPath);
+			}
+
 			// Ensure output file does not exist
 			var fileName = Path.GetFileName(inputPath);
 			_secretStorage.ThrowIfSecretExists(fileName);

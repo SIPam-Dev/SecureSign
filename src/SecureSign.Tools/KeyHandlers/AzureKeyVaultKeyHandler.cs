@@ -33,29 +33,58 @@ namespace SecureSign.Tools.KeyHandlers
 		/// <param name="inputPath"></param>
 		public void AddKey(string inputPath)
 		{
+			AzureSignToolConfig? config;
+
 			// Ensure output file does not exist
 			var fileName = Path.GetFileName(inputPath);
 			_secretStorage.ThrowIfSecretExists(fileName);
 
-			var password = ConsoleUtils.PasswordPrompt("Password");
-			var inputData = File.ReadAllBytes(inputPath);
-
-			using (var stream = new MemoryStream(inputData, false))
-			using (var reader = new StreamReader(stream, true))
+			if (File.Exists(inputPath))
 			{
-				var config = JsonConvert.DeserializeObject<AzureSignToolConfig>(reader.ReadToEnd());
-				config.KeyVaultClientSecret = password.ToAnsiString();
-				var code = _passwordGenerator.Generate();
-
-				_secretStorage.SaveSecret(fileName, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config)), code);
+				var inputData = File.ReadAllBytes(inputPath);
+				using (var stream = new MemoryStream(inputData, false))
+				using (var reader = new StreamReader(stream, true))
+				{
+					config = JsonConvert.DeserializeObject<AzureSignToolConfig>(reader.ReadToEnd());
+				}
+			}
+			else
+			{
 				Console.WriteLine();
-				Console.WriteLine($"Saved {fileName}");
-				Console.WriteLine($"Certificate name: {config.KeyVaultCert}");
+				Console.WriteLine("Azure Keyvault settings:");
+				config = new AzureSignToolConfig();
+				config.KeyVaultUrl = ConsoleUtils.Prompt("Keyvault url");
+				config.KeyVaultTenant = ConsoleUtils.Prompt("Tenant id");
+				config.KeyVaultClient = ConsoleUtils.Prompt("Client id");
+				config.KeyVaultCert = ConsoleUtils.Prompt("Certificate name");
+			}
+			if (string.IsNullOrEmpty(config.KeyVaultCert))
+			{
+				config.KeyVaultCert = Path.GetFileName(inputPath);
+				if (inputPath.EndsWith(".az.json", true, null))
+				{
+					config.KeyVaultCert = config.KeyVaultCert.Substring(0, config.KeyVaultCert.Length - ".az.json".Length);
+				} else
+				{
+					config.KeyVaultCert = Path.GetFileNameWithoutExtension(inputPath);
+				}
+			}
+
+			config.KeyVaultClientSecret = ConsoleUtils.PasswordPrompt("Client secret").ToAnsiString();
+			var code = _passwordGenerator.Generate();
+
+			_secretStorage.SaveSecret(fileName, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config)), code);
+			Console.WriteLine();
+			Console.WriteLine($"Saved {fileName}");
+			if (!File.Exists(inputPath))
+			{
+				Console.WriteLine($"Keyvault url: {config.KeyVaultUrl}");
 				Console.WriteLine($"Tenant id: {config.KeyVaultTenant}");
 				Console.WriteLine($"Client id: {config.KeyVaultClient}");
-				Console.WriteLine();
-				Console.WriteLine($"Secret Code: {code}");
+				Console.WriteLine($"Certificate name: {config.KeyVaultCert}");
 			}
+			Console.WriteLine();
+			Console.WriteLine($"Secret Code: {code}");
 		}
 
 		/// <summary>
