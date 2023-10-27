@@ -61,7 +61,7 @@ namespace SecureSign.Web.Controllers
 			}
 
 			var rawCert = _secretStorage.LoadSecret(token.KeyName, token.Code);
-			var signed = await _signer.SignAsync(artifact, rawCert, token.Code, tokenConfig.SignDescription, tokenConfig.SignUrl, fileExtention);
+			var signed = await _signer.SignAsync(artifact, rawCert, token, tokenConfig.SignDescription, tokenConfig.SignUrl, fileExtention);
 			return File(signed, "application/octet-stream");
 		}
 	}

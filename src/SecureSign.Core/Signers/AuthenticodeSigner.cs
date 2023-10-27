@@ -51,35 +51,38 @@ namespace SecureSign.Core.Signers
 		/// </summary>
 		/// <param name="input">Object to sign</param>
 		/// <param name="configData">Configuration data for signing</param>
-		/// <param name="configKey">Configuration key, e.g. to decrypt/access configuration data</param>
+		/// <param name="token">Access token, e.g. to decrypt/access configuration data</param>
 		/// <param name="cert">Certificate to use for signing</param>
 		/// <param name="description">Description to sign the object with</param>
 		/// <param name="url">URL to include in the signature</param>
 		/// <returns>A signed copy of the file</returns>
-		public async Task<Stream> SignAsync(Stream input, byte[] configData, string configKey, string description, string url, string fileExtention)
+		public async Task<Stream> SignAsync(Stream input, byte[] configData, AccessToken token, string description, string url, string fileExtention)
 		{
-			try
+			switch(KeyTypeUtils.FromFilename(token.KeyName))
 			{
-				// if (X509Certificate2.GetCertContentType(configData) == X509ContentType.Pfx)
-				{
-					var cert = new X509Certificate2(configData, configKey, X509KeyStorageFlags.Exportable);
-					return await SignAsync(input, cert, description, url, fileExtention);
-				}
-			}
-			catch (CryptographicException)
-			{
+				case KeyType.Authenticode:
+					{
+						var cert = new X509Certificate2(configData, token.Code, X509KeyStorageFlags.Exportable);
+						return await SignAsync(input, cert, description, url, fileExtention);
+					}
+				case KeyType.KeyVaultAppSecret:
+					{
+						using (var stream = new MemoryStream(configData, false))
+						using (var reader = new StreamReader(stream, true))
+						{
+							var config = JsonConvert.DeserializeObject<AzureSignToolConfig>(reader.ReadToEnd());
+							var inputFile = Path.GetTempFileName() + fileExtention;
+							_filesToDelete.Add(inputFile);
+
+							await input.CopyToFileAsync(inputFile);
+							return await SignUsingAzureSignToolAsync(inputFile, config.KeyVaultUrl, config.KeyVaultTenant, config.KeyVaultClient, config.KeyVaultClientSecret, config.KeyVaultCert, description, url);
+						}
+
+					}
+				default:
+					throw new Exception("Unsupported key type");
 			}
 
-			using (var stream = new MemoryStream(configData, false))
-			using (var reader = new StreamReader(stream, true))
-			{
-				var config = JsonConvert.DeserializeObject<AzureSignToolConfig>(reader.ReadToEnd());
-				var inputFile = Path.GetTempFileName() + fileExtention;
-				_filesToDelete.Add(inputFile);
-
-				await input.CopyToFileAsync(inputFile);
-				return await SignUsingAzureSignToolAsync(inputFile, config.KeyVaultUrl, config.KeyVaultTenant, config.KeyVaultClient, config.KeyVaultClientSecret, config.KeyVaultCert, description, url);
-			}
 		}
 
 		/// <summary>

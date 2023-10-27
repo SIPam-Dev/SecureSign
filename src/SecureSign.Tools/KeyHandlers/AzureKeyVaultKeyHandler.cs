@@ -25,7 +25,7 @@ namespace SecureSign.Tools.KeyHandlers
 		/// <summary>
 		/// Gets the key type that this key handler supports
 		/// </summary>
-		public KeyType KeyType => KeyType.AzureKeyVault;
+		public KeyType KeyType => KeyType.KeyVaultAppSecret;
 
 		/// <summary>
 		/// Adds a new key to the secret storage.

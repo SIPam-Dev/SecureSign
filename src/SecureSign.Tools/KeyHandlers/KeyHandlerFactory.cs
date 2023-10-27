@@ -38,7 +38,7 @@ namespace SecureSign.Tools.KeyHandlers
 			}
 			catch (Exception ex)
 			{
-				throw new Exception($"Unrecognised file extension. Please use .pfx for Authenticode or .gpg for GPG. {ex.Message}");
+				throw new Exception($"Unrecognised file extension. Please use .pfx for Authenticode, .kvas for Azure key vault with app secret or .gpg for GPG. {ex.Message}");
 			}
 		}
 	}

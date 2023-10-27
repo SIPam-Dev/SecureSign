@@ -18,9 +18,9 @@ namespace SecureSign.Core
 		Authenticode,
 
 		/// <summary>
-		/// Azure key vault (eg. to sign Windows installers)
+		/// Azure key vault, app secret (eg. to sign Windows installers)
 		/// </summary>
-		AzureKeyVault,
+		KeyVaultAppSecret,
 
 		/// <summary>
 		/// GnuPG

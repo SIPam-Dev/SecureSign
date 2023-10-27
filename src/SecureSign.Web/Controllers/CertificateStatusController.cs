@@ -68,7 +68,7 @@ namespace SecureSign.Web.Controllers
 						Subject = cert.SubjectName.Format(false),
 						Thumbprint = cert.Thumbprint,
 					});
-				case KeyType.AzureKeyVault:
+				case KeyType.KeyVaultAppSecret:
 					var inputData = _secretStorage.LoadSecret(token.KeyName, token.Code);
 					using (var stream = new MemoryStream(inputData, false))
 					using (var reader = new StreamReader(stream, true))

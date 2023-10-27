@@ -23,11 +23,11 @@ namespace SecureSign.Core
 			{
 				case ".pfx":
 					return KeyType.Authenticode;
+				case ".kvas":
+					return KeyType.KeyVaultAppSecret;
 				case ".gpg":
 					return KeyType.Gpg;
 				default:
-					if (filename.EndsWith(".az.json", true, null))
-						return KeyType.AzureKeyVault;
 					throw new Exception("Unsupported key type");
 			}
 		}
