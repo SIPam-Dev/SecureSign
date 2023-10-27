@@ -33,7 +33,7 @@ namespace SecureSign.Tools.KeyHandlers
 		/// <param name="inputPath"></param>
 		public void AddKey(string inputPath)
 		{
-			AzureSignToolConfig? config;
+			AzureSignToolConfig config;
 
 			// Ensure output file does not exist
 			var fileName = Path.GetFileName(inputPath);
