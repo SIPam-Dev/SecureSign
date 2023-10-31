@@ -3,6 +3,8 @@ SecureSign
 
 SecureSign is a simple code signing server. It is designed to allow Authenticode and GPG signing of build artifacts in a secure way, without exposing the private key.
 
+This fork adds the ability to use a remote certificate stored in Azure key vault.
+
 Features
 ========
  - **Isolation**: Each unique call site has its own access token for the service. An access token only provides access to a single signing key, and can be restricted to only sign particular content.
@@ -14,7 +16,8 @@ Prerequisites
  - [ASP.NET Core 2.0 runtime](https://www.microsoft.com/net/download/core#/runtime) must be installed
  - For Authenticode:
    - On Linux, [osslsigncode](https://sourceforge.net/projects/osslsigncode/) needs to be installed. On Debian-based distros, you can `apt-get install osslsigncode`.
-   - On Windows, [signtool](https://docs.microsoft.com/en-us/dotnet/framework/tools/signtool-exe) needs to be installed. This comes with the Windows SDK.
+   - On Windows (local certificate), [signtool](https://docs.microsoft.com/en-us/dotnet/framework/tools/signtool-exe) needs to be installed. This comes with the Windows SDK.
+   - On Windows (remote certificate), [AzureSignTool](https://github.com/vcsjones/AzureSignTool) can be used to support signing with a certificate stored in Azure key vault.
  - For GPG:
    - On Linux, `libgpgme.so.11` needs to be available. On Debian and Ubuntu, install the [libgpgme11](https://packages.debian.org/stretch/libgpgme11) package.
    - On Windows, you will need to install [Gpg4Win](https://www.gpg4win.org/).
@@ -25,7 +28,14 @@ The `publish.sh` script will build SecureSign into the `published` directory.
 
 Before using SecureSign, you need to add your private signing keys. For Authenticode, ensure you have the key as a `.pfx` file. For GPG, ensure you export the secret key without a passphrase, and name the file with a `.gpg` extension.
 
-Once you have your key file, use the `addkey` command:
+For Azure key vault you can use '.kvas' extension. The addkey-command will prompt for all necessary values, e.g. Tenant-ID.
+If you do not have direct access to the azure app administration web-ui, you can try to use the Azure CLI for your web application.
+Here are some cli examples:
+ - Show your apps: `az ad app list --show-mine`
+ - List app credentials: `az ad app credential list --id <app-id>`
+ - Add new app client credential: `az ad app credential reset --id <app-id> --append --display-name "Access key vault by AzureSignTool"`
+
+Once you have your key file (or configured azure access), use the `addkey` command:
 
 ```
 $ dotnet SecureSign.Tools.dll addkey /tmp/my_key.pfx
